@@ -1,5 +1,5 @@
 import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
-import Size from './Size.model';
+import Subcategory from './SubCategory.model';
 
 @Table({
 	tableName: 'categories',
@@ -11,8 +11,8 @@ class Category extends Model {
 	})
 	declare name: string;
 
-	@HasMany(() => Size)
-	declare sizes: Size[];
+	@HasMany(() => Subcategory)
+	declare subcategories: Subcategory[];
 }
 
 export default Category;

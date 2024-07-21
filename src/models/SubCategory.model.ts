@@ -9,9 +9,9 @@ import {
 import Category from './Category.model';
 
 @Table({
-	tableName: 'sizes',
+	tableName: 'subcategories',
 })
-class Size extends Model {
+class Subcategory extends Model {
 	@Column({
 		type: DataType.STRING(50),
 		allowNull: false,
@@ -29,4 +29,4 @@ class Size extends Model {
 	declare category: Category;
 }
 
-export default Size;
+export default Subcategory;
