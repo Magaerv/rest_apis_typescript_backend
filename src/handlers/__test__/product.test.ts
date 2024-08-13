@@ -1,124 +1,284 @@
 import request from 'supertest';
 import server from '../../server';
 
-describe('POST /api/products', () => {
-	it('Should display validation errors', async () => {
-		const res = await request(server).post('/api/products').send({});
-		expect(res.status).toBe(400);
-		expect(res.body).toHaveProperty('errors');
-		expect(res.body.errors).toHaveLength(13);
+describe('Product API', () => {
+	let categoryId: number;
+	let subcategoryId: number;
+	let productId: number;
 
-		expect(res.status).not.toBe(201);
-		expect(res.body.errors).not.toHaveLength(2);
+	beforeAll(async () => {
+		categoryId = await createCategory('New Category');
+		subcategoryId = await createSubcategory('New Subcategory', categoryId);
 	});
 
-	it('Should validate the price is a number and greater than 0', async () => {
-		const res = await request(server).post('/api/products').send({
-			name: 'Producto de prueba 0',
-			price: 'gfd',
-			gender: 'femenino',
-			description: 'Producto de prueba',
-			quantity: 20,
-			imageUrl: 'url.com',
-			categoryId: 1,
-			subcategoryId: 2,
+	describe('POST /api/products', () => {
+		it('should create a new product', async () => {
+			const newProduct = createProductData(
+				'T-shirt',
+				799,
+				true,
+				'unisex',
+				'Latest T-shirt',
+				50,
+				'http://example.com/t-shirt.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.post('/api/products')
+				.send(newProduct);
+
+			expect(response.statusCode).toBe(201);
+			expect(response.body.data).toHaveProperty('id');
+			expect(response.body.data.name).toBe(newProduct.name);
 		});
 
-		expect(res.status).toBe(400);
-		expect(res.body).toHaveProperty('errors');
-		expect(res.body.errors).toHaveLength(2);
+		it('should return validation error if name is missing', async () => {
+			const newProduct = createProductData(
+				'',
+				799,
+				true,
+				'unisex',
+				'Latest T-shirt',
+				50,
+				'http://example.com/t-shirt.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.post('/api/products')
+				.send(newProduct);
 
-		expect(res.status).not.toBe(404);
-		expect(res.body.errors).not.toHaveLength(3);
-	});
-
-	it('Should validate the price is greater than 0', async () => {
-		const res = await request(server).post('/api/products').send({
-			name: 'Producto de prueba 0',
-			price: 0,
-			gender: 'femenino',
-			description: 'Producto de prueba',
-			quantity: 20,
-			imageUrl: 'url.com',
-			categoryId: 1,
-			subcategoryId: 2,
+			expect(response.statusCode).toBe(400);
+			expect(response.body.errors[0].msg).toBe(
+				'El nombre del producto no puede ir vacío'
+			);
 		});
 
-		expect(res.status).toBe(400);
-		expect(res.body).toHaveProperty('errors');
-		expect(res.body.errors).toHaveLength(1);
+		it('should return validation error for invalid price', async () => {
+			const newProduct = createProductData(
+				'Invalid Price Product',
+				-1,
+				true,
+				'unisex',
+				'Invalid price test',
+				10,
+				'http://example.com/invalid.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.post('/api/products')
+				.send(newProduct);
 
-		expect(res.status).not.toBe(404);
-		expect(res.body.errors).not.toHaveLength(2);
-	});
-
-	it('Should create a new product', async () => {
-		const res = await request(server).post('/api/products').send({
-			name: 'Producto de prueba',
-			price: 1000,
-			gender: 'femenino',
-			description: 'Producto de prueba',
-			quantity: 20,
-			imageUrl: 'url.com',
-			categoryId: 1,
-			subcategoryId: 2,
+			expect(response.statusCode).toBe(400);
+			expect(response.body.errors[0].msg).toBe('Precio no válido');
 		});
 
-		expect(res.status).toEqual(201);
-		expect(res.body).toHaveProperty('data');
+		it('should handle extreme values', async () => {
+			const newProduct = createProductData(
+				'Extreme Product',
+				100001,
+				true,
+				'unisex',
+				'Extreme value test',
+				0,
+				'http://example.com/extreme.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.post('/api/products')
+				.send(newProduct);
 
-		expect(res.status).not.toBe(404);
-		expect(res.status).not.toBe(200);
-		expect(res.body).not.toHaveProperty('errors');
+			expect(response.statusCode).toBe(400);
+			expect(response.body.errors[0].msg).toBe(
+				'Precio fuera del rango permitido'
+			);
+		});
+	});
+
+	describe('GET /api/products', () => {
+		it('should return all products', async () => {
+			const response = await request(server).get('/api/products');
+
+			expect(response.statusCode).toBe(200);
+			expect(Array.isArray(response.body.data)).toBe(true);
+			expect(response.body.data.length).toBeGreaterThan(0);
+		});
+	});
+
+	describe('PUT /api/products/:id', () => {
+		beforeAll(async () => {
+			const newProduct = createProductData(
+				'Product to Update',
+				100,
+				true,
+				'unisex',
+				'Product before update',
+				10,
+				'http://example.com/product.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.post('/api/products')
+				.send(newProduct);
+			productId = response.body.data.id;
+		});
+
+		it('should update a product successfully', async () => {
+			const updatedProduct = createProductData(
+				'Updated Product',
+				150,
+				false,
+				'femenino',
+				'Updated description',
+				20,
+				'http://example.com/updated.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.put(`/api/products/${productId}`)
+				.send(updatedProduct);
+
+			expect(response.statusCode).toBe(200);
+			expect(response.body.data.name).toBe(updatedProduct.name);
+			expect(response.body.data.price).toBe(updatedProduct.price);
+			expect(response.body.data.availability).toBe(updatedProduct.availability);
+			expect(response.body.data.gender).toBe(updatedProduct.gender);
+			expect(response.body.data.description).toBe(updatedProduct.description);
+			expect(response.body.data.quantity).toBe(updatedProduct.quantity);
+			expect(response.body.data.imageUrl).toBe(updatedProduct.imageUrl);
+		});
+
+		it('should return error if product does not exist', async () => {
+			const updatedProduct = createProductData(
+				'Non-existent Product',
+				200,
+				true,
+				'masculino',
+				'Non-existent product',
+				30,
+				'http://example.com/non-existent.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.put('/api/products/999999999')
+				.send(updatedProduct);
+
+			expect(response.statusCode).toBe(404);
+			expect(response.body.error).toBe('Producto no encontrado');
+		});
+
+		it('should return validation error for invalid data', async () => {
+			const invalidProduct = createProductData(
+				'',
+				-50,
+				true,
+				'unisex',
+				'Invalid product',
+				5,
+				'http://example.com/invalid.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.put(`/api/products/${productId}`)
+				.send(invalidProduct);
+
+			expect(response.statusCode).toBe(400);
+			expect(response.body.errors).toContainEqual(
+				expect.objectContaining({
+					msg: 'El nombre del producto no puede ir vacío',
+				})
+			);
+			expect(response.body.errors).toContainEqual(
+				expect.objectContaining({ msg: 'Precio no válido' })
+			);
+		});
+	});
+
+	describe('DELETE /api/products/:id', () => {
+		beforeAll(async () => {
+			const newProduct = createProductData(
+				'Product to Delete',
+				200,
+				true,
+				'unisex',
+				'This product will be deleted',
+				15,
+				'http://example.com/delete.jpg',
+				categoryId,
+				subcategoryId
+			);
+			const response = await request(server)
+				.post('/api/products')
+				.send(newProduct);
+			productId = response.body.data.id;
+		});
+
+		it('should delete a product successfully', async () => {
+			const response = await request(server).delete(
+				`/api/products/${productId}`
+			);
+
+			expect(response.statusCode).toBe(200);
+			expect(response.body.data).toBe('Producto eliminado');
+
+			const getResponse = await request(server).get(
+				`/api/products/${productId}`
+			);
+			expect(getResponse.statusCode).toBe(404);
+			expect(getResponse.body.error).toBe('Producto no encontrado');
+		});
+
+		it('should return error if product does not exist', async () => {
+			const response = await request(server).delete('/api/products/999999');
+
+			expect(response.statusCode).toBe(404);
+			expect(response.body.error).toBe('Producto no encontrado');
+		});
 	});
 });
 
-describe('GET /api/products', () => {
-	it('Should check if api/products url exists', async () => {
-		const res = await request(server).get('/api/products');
+// Refactorización del código:
+async function createCategory(name: string) {
+	const response = await request(server)
+		.post('/api/products/category')
+		.send({ name });
+	return response.body.data.id;
+}
 
-		expect(res.status).not.toBe(404);
-	});
+async function createSubcategory(name: string, categoryId: number) {
+	const response = await request(server)
+		.post('/api/products/subcategory')
+		.send({ name, categoryId });
+	return response.body.data.id;
+}
 
-	it('GET a JSON respone with products', async () => {
-		const res = await request(server).get('/api/products');
-
-		expect(res.status).toBe(200);
-		expect(res.headers['content-type']).toMatch(/json/);
-		expect(res.body).toHaveProperty('data');
-		expect(res.body.data).toHaveLength(1);
-
-		expect(res.body).not.toHaveProperty('errors');
-	});
-});
-
-describe('GET api/products/:id', () => {
-	it('Should return a 404 response for a non-existent product', async () => {
-		const productId = 20000;
-		const res = await request(server).get(`/api/products/${productId}`);
-
-		expect(res.status).toBe(404);
-		expect(res.body).toHaveProperty('error');
-		expect(res.body.error).toBe('Producto no encontrado');
-	});
-
-	it('Should check a valid ID in the URL', async () => {
-		const res = await request(server).get('/api/products/not-valid-url');
-
-		expect(res.status).toBe(400);
-		expect(res.body).toHaveProperty('errors');
-		expect(res.body.errors).toHaveLength(1);
-		expect(res.body.errors[0].msg).toBe('ID no válido');
-	});
-});
-
-describe('PUT /api/products/:id', () => {
-	it('Should display validation messages when updating a product', async () => {
-		const res = await request(server)
-			.put('/api/products/not-valid-id')
-			.send({});
-
-		expect(res.status).toBe('400');
-		expect(res.body).toHaveProperty('errors');
-	});
-});
+function createProductData(
+	name: string,
+	price: number,
+	availability: boolean,
+	gender: string,
+	description: string,
+	quantity: number,
+	imageUrl: string,
+	categoryId: number,
+	subcategoryId: number
+) {
+	return {
+		name,
+		price,
+		availability,
+		gender,
+		description,
+		quantity,
+		imageUrl,
+		categoryId,
+		subcategoryId,
+	};
+}

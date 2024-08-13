@@ -87,17 +87,29 @@ router.post(
 router.post(
 	'/category',
 	body('name')
+		.trim()
 		.notEmpty()
-		.withMessage('El nombre de la categoría no puede ir vacío'),
+		.withMessage('El nombre de la categoría no puede ir vacío')
+		.isLength({ min: 1 })
+		.withMessage(
+			'El nombre de la categoría no puede ser solo espacios en blanco'
+		),
+	handleInputErrors,
 	createCategory
 );
 
 router.post(
 	'/subcategory',
 	body('name')
+		.trim()
 		.notEmpty()
-		.withMessage('El nombre de la subcategoría no puede ir vacío'),
+		.withMessage('El nombre de la subcategoría no puede ir vacío')
+		.isLength({ min: 1 })
+		.withMessage(
+			'El nombre de la subcategoría no puede ser solo espacios en blanco'
+		),
 	body('categoryId').notEmpty().withMessage('Debes asignar una categoría'),
+	handleInputErrors,
 	createSubcategory
 );
 
