@@ -11,7 +11,7 @@ import {
 	updateProduct,
 } from './handlers';
 import { handleInputErrors } from './middleware';
-import { getCategories } from './handlers/get.categories';
+import { getCategories, getSubcategories } from './handlers/get.categories';
 
 const router = Router();
 /**
@@ -453,7 +453,7 @@ router.post(
  *                  example: "Internal server error"
  */
 
-router.get('/subcategories', getCategories);
+router.get('/subcategories', getSubcategories);
 
 /**
  * @swagger
