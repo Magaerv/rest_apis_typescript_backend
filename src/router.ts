@@ -11,7 +11,8 @@ import {
 	updateProduct,
 } from './handlers';
 import { handleInputErrors } from './middleware';
-import { getCategories, getSubcategories } from './handlers/get.categories';
+import { getCategories } from './handlers/get.categories';
+import { getSubcategories } from './handlers/get.subcategories';
 
 const router = Router();
 /**
