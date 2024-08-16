@@ -23,9 +23,14 @@ const server = express();
 
 const corsOptions: CorsOptions = {
 	origin: function (origin, callback) {
-		if (origin === process.env.FRONTEND_URL) {
+		if (
+			!origin ||
+			origin === process.env.FRONTEND_URL ||
+			origin === 'http://localhost:5173'
+		) {
 			callback(null, true);
 		} else {
+			console.error(`CORS error: ${origin} no está permitido.`);
 			callback(new Error('Error de CORS'));
 		}
 	},
