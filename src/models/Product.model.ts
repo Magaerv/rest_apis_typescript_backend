@@ -27,6 +27,7 @@ class Product extends Model {
 	@Default(true)
 	@Column({
 		type: DataType.BOOLEAN,
+    defaultValue: true,
 	})
 	declare availability: boolean;
 

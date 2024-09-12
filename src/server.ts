@@ -13,7 +13,9 @@ export async function connectDb() {
 		await db.sync();
 		console.log(colors.blue.bold('Conexión exitosa con la DB'));
 	} catch (error) {
-		console.log(colors.red.bold('Hubo un error al conectar a la DB'));
+		console.log(
+			colors.red.bold(`Hubo un error al conectar a la DB:', ${error}`)
+		);
 	}
 }
 
