@@ -27,7 +27,7 @@ class Product extends Model {
 	@Default(true)
 	@Column({
 		type: DataType.BOOLEAN,
-    defaultValue: true,
+		defaultValue: true,
 	})
 	declare availability: boolean;
 
@@ -50,10 +50,10 @@ class Product extends Model {
 	declare quantity: number;
 
 	@Column({
-		type: DataType.STRING,
+		type: DataType.ARRAY(DataType.STRING),
 		allowNull: true,
 	})
-	declare imageUrl: string;
+	declare imageUrls: string[];
 
 	@ForeignKey(() => Category)
 	@Column({

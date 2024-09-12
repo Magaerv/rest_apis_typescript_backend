@@ -8,6 +8,7 @@ export const getProductById = async (req: Request, res: Response) => {
 		if (!product) {
 			return res.status(404).json({ error: 'Producto no encontrado' });
 		}
+		console.log('productos', product);
 		res.json({ data: product });
 	} catch (error) {
 		console.log(error);
